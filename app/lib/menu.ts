@@ -149,31 +149,6 @@ export function priceLabel(p: Product): string {
   return p.sizes.length > 1 ? `from ${money(p.fromPrice)}` : money(p.fromPrice);
 }
 
-/**
- * TEMPORARY competitive-pricing preview (owner review). Suggested starting
- * price per product, benchmarked June 2026 vs Domino's, Pizza Hut & DiCarlo's.
- * Remove this map (and the homepage banner) to turn the preview off.
- */
-export const SUGGESTED_FROM: Record<string, number> = {
-  "byo-pizza": 6.95, // build-your-own (from Personal)
-  "belly-buster": 12.95,
-  i199: 13.95, // Cauliflower Crust
-  deluxe: 19.95,
-  everything: 24.95,
-  veggie: 19.95,
-  "supreme-cheese": 14.95,
-  "white-pizza": 12.95,
-  hawaiian: 14.95,
-  "all-meat": 15.95,
-  i168: 12.95, // Traditional Wings
-  i169: 10.95, // Boneless Wings
-};
-
-export function suggestedFrom(p: Product): number | null {
-  const s = SUGGESTED_FROM[p.key];
-  return s && Math.abs(s - p.fromPrice) > 0.001 ? s : null;
-}
-
 /* ------------------------------------------------------------------ *
  * Upsells, cross-sells & nudges (AOV).
  * ------------------------------------------------------------------ */
