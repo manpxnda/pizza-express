@@ -3,10 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import logo from "../../public/logo.png";
 import { LOCATIONS } from "../lib/data";
-import { CATEGORIES, money, type MenuItem } from "../lib/menu";
+import {
+  ORDER_CATEGORIES,
+  money,
+  priceLabel,
+  productHasOptions,
+  type Product,
+} from "../lib/menu";
 import { lineTotal, useCart } from "./CartContext";
 import ItemModal from "./ItemModal";
 
@@ -15,6 +21,7 @@ export default function OrderApp() {
   const params = useSearchParams();
   const {
     state,
+    addLine,
     setLocation,
     setOrderType,
     removeLine,
@@ -23,24 +30,48 @@ export default function OrderApp() {
     subtotal,
   } = useCart();
 
-  const [activeCat, setActiveCat] = useState(CATEGORIES[0].id);
-  const [modalItem, setModalItem] = useState<MenuItem | null>(null);
+  const [activeCat, setActiveCat] = useState(ORDER_CATEGORIES[0].key);
+  const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Preselect location from ?loc= (only if not already chosen).
+  // Preselect location from ?loc=.
   useEffect(() => {
     const loc = params.get("loc");
-    if (loc && LOCATIONS.some((l) => l.slug === loc)) {
-      setLocation(loc);
-    } else if (!state.locationSlug) {
-      setLocation(LOCATIONS[0].slug);
-    }
+    if (loc && LOCATIONS.some((l) => l.slug === loc)) setLocation(loc);
+    else if (!state.locationSlug) setLocation(LOCATIONS[0].slug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currentLocation =
     LOCATIONS.find((l) => l.slug === state.locationSlug) ?? LOCATIONS[0];
-  const category = CATEGORIES.find((c) => c.id === activeCat) ?? CATEGORIES[0];
+  const category =
+    ORDER_CATEGORIES.find((c) => c.key === activeCat) ?? ORDER_CATEGORIES[0];
+
+  const flashToast = (name: string) => {
+    setToast(name);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 1800);
+  };
+
+  const handleProductClick = (product: Product) => {
+    if (productHasOptions(product)) {
+      setModalProduct(product);
+      return;
+    }
+    // No size choice and no modifiers — add straight to the cart.
+    const it = product.sizes[0].item;
+    addLine({
+      uid: `${it.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      itemId: it.id,
+      name: product.name,
+      basePrice: it.price,
+      qty: 1,
+      modifiers: [],
+    });
+    flashToast(product.name);
+  };
 
   return (
     <div className="min-h-screen bg-cream pb-28 md:pb-0">
@@ -52,7 +83,6 @@ export default function OrderApp() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Location selector */}
             <select
               value={currentLocation.slug}
               onChange={(e) => setLocation(e.target.value)}
@@ -66,7 +96,6 @@ export default function OrderApp() {
               ))}
             </select>
 
-            {/* Cart button */}
             <button
               onClick={() => setCartOpen(true)}
               aria-label="Open cart"
@@ -96,9 +125,7 @@ export default function OrderApp() {
                   key={t}
                   onClick={() => setOrderType(t)}
                   className={`rounded-full px-4 py-1.5 text-sm font-bold capitalize transition-colors ${
-                    state.orderType === t
-                      ? "bg-pizza-red text-white"
-                      : "text-charcoal/60 hover:text-pizza-red"
+                    state.orderType === t ? "bg-pizza-red text-white" : "text-charcoal/60 hover:text-pizza-red"
                   }`}
                 >
                   {t}
@@ -114,16 +141,15 @@ export default function OrderApp() {
         {/* Category tabs */}
         <div className="border-t border-charcoal/10 bg-white">
           <div className="mx-auto flex max-w-6xl gap-1.5 overflow-x-auto px-4 py-2.5 sm:px-6">
-            {CATEGORIES.map((c) => (
+            {ORDER_CATEGORIES.map((c) => (
               <button
-                key={c.id}
-                onClick={() => setActiveCat(c.id)}
-                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                  activeCat === c.id
-                    ? "bg-charcoal text-white"
-                    : "bg-cream text-charcoal/65 hover:text-pizza-red"
+                key={c.key}
+                onClick={() => setActiveCat(c.key)}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                  activeCat === c.key ? "bg-charcoal text-white" : "bg-cream text-charcoal/65 hover:text-pizza-red"
                 }`}
               >
+                <span aria-hidden>{c.emoji}</span>
                 {c.name}
               </button>
             ))}
@@ -133,43 +159,64 @@ export default function OrderApp() {
 
       {/* Menu */}
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <h1 className="font-display text-2xl font-extrabold text-charcoal">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold text-charcoal">
+          <span aria-hidden>{category.emoji}</span>
           {category.name}
         </h1>
+        {category.blurb && (
+          <p className="mt-1 text-sm text-charcoal/60">{category.blurb}</p>
+        )}
+
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {category.items.map((item) => {
-            const customizable = item.modifierGroups.length > 0;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setModalItem(item)}
-                className="flex flex-col rounded-2xl border border-charcoal/10 bg-white p-4 text-left shadow-card transition-shadow hover:shadow-lift"
-              >
-                <div className="flex items-start justify-between gap-3">
+          {category.products.map((product) => (
+            <button
+              key={product.key}
+              onClick={() => handleProductClick(product)}
+              className="flex flex-col rounded-2xl border border-charcoal/10 bg-white p-4 text-left shadow-card transition-shadow hover:shadow-lift"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
                   <h2 className="font-display text-base font-bold text-charcoal">
-                    {item.name}
+                    {product.name}
                   </h2>
-                  <span className="shrink-0 font-display text-base font-extrabold text-pizza-green-dark">
-                    {money(item.price)}
-                  </span>
+                  {product.badge && (
+                    <span className="rounded-full bg-pizza-green/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pizza-green-dark">
+                      {product.badge}
+                    </span>
+                  )}
                 </div>
-                {item.desc && (
-                  <p className="mt-1 line-clamp-2 text-sm text-charcoal/55">
-                    {item.desc}
-                  </p>
-                )}
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pizza-red">
-                  {customizable ? "Customize" : "Add"}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
+                <span className="shrink-0 text-right">
+                  {product.sizes.length > 1 && (
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-charcoal/40">
+                      from
+                    </span>
+                  )}
+                  <span className="font-display text-base font-extrabold text-pizza-green-dark">
+                    {money(product.fromPrice)}
+                  </span>
                 </span>
-              </button>
-            );
-          })}
+              </div>
+              {product.desc && (
+                <p className="mt-1 line-clamp-2 text-sm text-charcoal/55">{product.desc}</p>
+              )}
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pizza-red">
+                {productHasOptions(product) ? "Customize" : "Add"}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </span>
+            </button>
+          ))}
         </div>
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-white shadow-lift md:bottom-6">
+          Added {toast} ✓
+        </div>
+      )}
 
       {/* Mobile cart bar */}
       {itemCount > 0 && (
@@ -186,8 +233,8 @@ export default function OrderApp() {
       )}
 
       {/* Item modal */}
-      {modalItem && (
-        <ItemModal item={modalItem} onClose={() => setModalItem(null)} />
+      {modalProduct && (
+        <ItemModal product={modalProduct} onClose={() => setModalProduct(null)} />
       )}
 
       {/* Cart drawer */}
@@ -201,9 +248,7 @@ export default function OrderApp() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-charcoal/10 bg-white p-5">
-              <h2 className="font-display text-xl font-extrabold text-charcoal">
-                Your order
-              </h2>
+              <h2 className="font-display text-xl font-extrabold text-charcoal">Your order</h2>
               <button
                 onClick={() => setCartOpen(false)}
                 aria-label="Close cart"
@@ -226,24 +271,17 @@ export default function OrderApp() {
               ) : (
                 <ul className="space-y-3">
                   {state.lines.map((line) => (
-                    <li
-                      key={line.uid}
-                      className="rounded-2xl border border-charcoal/10 bg-white p-4"
-                    >
+                    <li key={line.uid} className="rounded-2xl border border-charcoal/10 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-display font-bold text-charcoal">
-                            {line.name}
-                          </p>
+                          <p className="font-display font-bold text-charcoal">{line.name}</p>
                           {line.modifiers.length > 0 && (
                             <p className="mt-0.5 text-xs text-charcoal/55">
                               {line.modifiers.map((m) => m.name).join(", ")}
                             </p>
                           )}
                           {line.notes && (
-                            <p className="mt-0.5 text-xs italic text-charcoal/45">
-                              “{line.notes}”
-                            </p>
+                            <p className="mt-0.5 text-xs italic text-charcoal/45">“{line.notes}”</p>
                           )}
                         </div>
                         <span className="shrink-0 font-display font-extrabold text-charcoal">
@@ -259,9 +297,7 @@ export default function OrderApp() {
                           >
                             −
                           </button>
-                          <span className="w-6 text-center text-sm font-bold">
-                            {line.qty}
-                          </span>
+                          <span className="w-6 text-center text-sm font-bold">{line.qty}</span>
                           <button
                             onClick={() => setQty(line.uid, line.qty + 1)}
                             className="flex h-8 w-8 items-center justify-center font-bold text-charcoal/60 hover:text-pizza-red"

@@ -2,17 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { DISPLAY_GROUPS, itemsForDisplayGroup, money } from "../lib/menu";
-
-const TOPPING_NOTE: Record<string, string> = {
-  Pizzas: "Build your own — add any toppings when you order online.",
-  Wings: "Choose from 11 sauces: Hot, Mild, BBQ, Garlic Butter, Sassy Ranch & more.",
-};
+import { ORDER_CATEGORIES, priceLabel } from "../lib/menu";
 
 export default function Menu() {
-  const [active, setActive] = useState(DISPLAY_GROUPS[0].label);
-  const items = itemsForDisplayGroup(active);
-  const note = TOPPING_NOTE[active];
+  const [active, setActive] = useState(ORDER_CATEGORIES[0].key);
+  const category =
+    ORDER_CATEGORIES.find((c) => c.key === active) ?? ORDER_CATEGORIES[0];
 
   return (
     <section id="menu" className="scroll-mt-20 bg-cream py-16 sm:py-20">
@@ -25,51 +20,64 @@ export default function Menu() {
             Made fresh, made-to-order
           </h2>
           <p className="mt-3 text-charcoal/65">
-            A taste of what we make daily — see the full menu and build your
-            order online.
+            A taste of what we make daily — pick a category, then build your
+            order online in a couple taps.
           </p>
         </div>
 
         {/* Category tabs */}
         <div className="mt-8 flex flex-wrap justify-center gap-2">
-          {DISPLAY_GROUPS.map((g) => (
+          {ORDER_CATEGORIES.map((c) => (
             <button
-              key={g.label}
+              key={c.key}
               type="button"
-              onClick={() => setActive(g.label)}
-              className={`rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-                active === g.label
+              onClick={() => setActive(c.key)}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition-colors ${
+                active === c.key
                   ? "bg-pizza-red text-white shadow-card"
                   : "bg-white text-charcoal/70 ring-1 ring-charcoal/10 hover:text-pizza-red"
               }`}
             >
-              {g.label}
+              <span aria-hidden>{c.emoji}</span>
+              {c.name}
             </button>
           ))}
         </div>
 
-        {note && (
+        {category.blurb && (
           <p className="mt-6 text-center text-sm font-medium text-charcoal/60">
-            {note}
+            {category.blurb}
           </p>
         )}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          {items.map((item) => (
+          {category.products.map((product) => (
             <div
-              key={item.id}
+              key={product.key}
               className="flex items-start justify-between gap-4 rounded-2xl bg-white p-5 shadow-card"
             >
               <div>
-                <h3 className="font-display text-lg font-bold text-charcoal">
-                  {item.name}
-                </h3>
-                {item.desc && (
-                  <p className="mt-1 text-sm text-charcoal/60">{item.desc}</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-lg font-bold text-charcoal">
+                    {product.name}
+                  </h3>
+                  {product.badge && (
+                    <span className="rounded-full bg-pizza-green/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pizza-green-dark">
+                      {product.badge}
+                    </span>
+                  )}
+                </div>
+                {product.desc && (
+                  <p className="mt-1 text-sm text-charcoal/60">{product.desc}</p>
                 )}
               </div>
-              <span className="shrink-0 font-display text-lg font-extrabold text-pizza-green-dark">
-                {money(item.price)}
+              <span className="shrink-0 text-right font-display text-base font-extrabold text-pizza-green-dark">
+                {product.sizes.length > 1 && (
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-charcoal/40">
+                    from
+                  </span>
+                )}
+                {priceLabel(product).replace(/^from /, "")}
               </span>
             </div>
           ))}
