@@ -19,6 +19,18 @@ export default function Menu() {
           </h2>
         </div>
 
+        {/* Pricing-update preview banner (for owner review) */}
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border-2 border-dashed border-pizza-red/40 bg-pizza-red/5 p-4 text-center">
+          <p className="font-display text-sm font-bold text-pizza-red">
+            📊 Pricing update preview — for review
+          </p>
+          <p className="mt-1 text-sm text-charcoal/70">
+            Current prices are <span className="line-through decoration-pizza-red/60 decoration-2">crossed out</span>{" "}
+            with suggested <span className="font-semibold text-pizza-red">market-competitive prices</span> beside
+            them, benchmarked against Domino&apos;s, Pizza Hut &amp; DiCarlo&apos;s.
+          </p>
+        </div>
+
         {/* Category tabs */}
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {MENU.map((c) => (
@@ -61,9 +73,20 @@ export default function Menu() {
                     from
                   </span>
                 )}
-                <span className="font-display text-lg font-extrabold text-pizza-green-dark">
-                  ${item.price}
-                </span>
+                {item.newPrice ? (
+                  <span className="flex items-baseline justify-end gap-1.5">
+                    <span className="text-sm font-semibold text-charcoal/40 line-through decoration-pizza-red/60 decoration-2">
+                      ${item.price}
+                    </span>
+                    <span className="font-display text-lg font-extrabold text-pizza-red">
+                      ${item.newPrice}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="font-display text-lg font-extrabold text-pizza-green-dark">
+                    ${item.price}
+                  </span>
+                )}
               </div>
             </div>
           ))}
