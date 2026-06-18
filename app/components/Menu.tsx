@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ORDER_CATEGORIES, priceLabel } from "../lib/menu";
+import { ORDER_CATEGORIES, money, suggestedFrom } from "../lib/menu";
 
 export default function Menu() {
   const [active, setActive] = useState(ORDER_CATEGORIES[0].key);
@@ -22,6 +22,20 @@ export default function Menu() {
           <p className="mt-3 text-charcoal/65">
             A taste of what we make daily — pick a category, then build your
             order online in a couple taps.
+          </p>
+        </div>
+
+        {/* Temporary competitive-pricing preview (for owner review) */}
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border-2 border-dashed border-pizza-red/40 bg-pizza-red/5 p-4 text-center">
+          <p className="font-display text-sm font-bold text-pizza-red">
+            📊 Pricing preview — for review
+          </p>
+          <p className="mt-1 text-sm text-charcoal/70">
+            Where shown, the current price is{" "}
+            <span className="line-through decoration-pizza-red/60 decoration-2">crossed out</span>{" "}
+            next to a suggested{" "}
+            <span className="font-semibold text-pizza-red">market-competitive price</span>,
+            benchmarked vs Domino&apos;s, Pizza Hut &amp; DiCarlo&apos;s. Temporary &amp; easy to change.
           </p>
         </div>
 
@@ -71,13 +85,29 @@ export default function Menu() {
                   <p className="mt-1 text-sm text-charcoal/60">{product.desc}</p>
                 )}
               </div>
-              <span className="shrink-0 text-right font-display text-base font-extrabold text-pizza-green-dark">
+              <span className="shrink-0 text-right">
                 {product.sizes.length > 1 && (
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-charcoal/40">
                     from
                   </span>
                 )}
-                {priceLabel(product).replace(/^from /, "")}
+                {(() => {
+                  const sug = suggestedFrom(product);
+                  return sug ? (
+                    <span className="flex items-baseline justify-end gap-1.5">
+                      <span className="text-sm font-semibold text-charcoal/40 line-through decoration-pizza-red/60 decoration-2">
+                        {money(product.fromPrice)}
+                      </span>
+                      <span className="font-display text-base font-extrabold text-pizza-red">
+                        {money(sug)}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="font-display text-base font-extrabold text-pizza-green-dark">
+                      {money(product.fromPrice)}
+                    </span>
+                  );
+                })()}
               </span>
             </div>
           ))}

@@ -8,6 +8,7 @@ import logo from "../../public/logo.png";
 import { LOCATIONS } from "../lib/data";
 import {
   ORDER_CATEGORIES,
+  PIZZA_CATEGORY_KEYS,
   money,
   priceLabel,
   productHasOptions,
@@ -234,7 +235,11 @@ export default function OrderApp() {
 
       {/* Item modal */}
       {modalProduct && (
-        <ItemModal product={modalProduct} onClose={() => setModalProduct(null)} />
+        <ItemModal
+          product={modalProduct}
+          isPizza={PIZZA_CATEGORY_KEYS.includes(activeCat)}
+          onClose={() => setModalProduct(null)}
+        />
       )}
 
       {/* Cart drawer */}
