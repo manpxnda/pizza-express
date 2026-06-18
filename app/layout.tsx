@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import { LOCATIONS, SITE } from "./lib/data";
+import PwaRegister from "./components/PwaRegister";
+import InstallPrompt from "./components/InstallPrompt";
 
 const display = Poppins({
   variable: "--font-display",
@@ -53,7 +55,21 @@ export const metadata: Metadata = {
       "Fresh dough daily, made-to-order. Order online or call for pickup, delivery & drive-thru.",
     images: ["/og.png"],
   },
-  icons: { icon: "/icon.png", apple: "/icon.png" },
+  icons: {
+    icon: [
+      { url: "/icon.png", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Pizza Express",
+    statusBarStyle: "default",
+  },
+  // Legacy iOS standalone flag for older iPhones (modern iOS uses the manifest).
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {
@@ -111,6 +127,8 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-cream text-charcoal">
         {children}
+        <InstallPrompt />
+        <PwaRegister />
         <StructuredData />
       </body>
     </html>
