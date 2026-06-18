@@ -38,7 +38,7 @@ export default function Header() {
             </a>
           ))}
           <a
-            href="#order"
+            href="/order"
             className="rounded-full bg-pizza-red px-5 py-2.5 text-sm font-bold text-white shadow-card transition-transform hover:scale-105 hover:bg-pizza-red-dark"
           >
             Order Online
@@ -83,7 +83,7 @@ export default function Header() {
               </a>
             ))}
             <a
-              href="#order"
+              href="/order"
               onClick={() => setOpen(false)}
               className="mt-2 rounded-full bg-pizza-red px-5 py-3 text-center text-base font-bold text-white"
             >

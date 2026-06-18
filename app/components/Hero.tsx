@@ -26,7 +26,7 @@ export default function Hero() {
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row md:justify-start">
             <a
-              href="#order"
+              href="/order"
               className="w-full rounded-full bg-pizza-red px-8 py-4 text-center text-lg font-bold text-white shadow-lift transition-transform hover:scale-[1.03] hover:bg-pizza-red-dark sm:w-auto"
             >
               Start Your Order

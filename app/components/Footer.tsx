@@ -66,7 +66,7 @@ export default function Footer() {
               Quick Links
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li><a href="#order" className="hover:text-pizza-red">Order Online</a></li>
+              <li><a href="/order" className="hover:text-pizza-red">Order Online</a></li>
               <li><a href="#menu" className="hover:text-pizza-red">Menu</a></li>
               <li><a href="#locations" className="hover:text-pizza-red">Locations & Hours</a></li>
               <li><a href="#about" className="hover:text-pizza-red">About Us</a></li>

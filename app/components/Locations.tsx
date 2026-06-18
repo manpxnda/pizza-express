@@ -47,9 +47,7 @@ export default function Locations() {
 
               <div className="mt-5 flex gap-2.5">
                 <a
-                  href={loc.orderUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/order?loc=${loc.slug}`}
                   className="flex-1 rounded-full bg-pizza-red px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-pizza-red-dark"
                 >
                   Order

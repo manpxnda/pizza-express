@@ -59,9 +59,7 @@ export default function OrderNow() {
 
               <div className="mt-6 flex flex-col gap-2.5 pt-2">
                 <a
-                  href={loc.orderUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/order?loc=${loc.slug}`}
                   className="rounded-full bg-pizza-red px-5 py-3.5 text-center text-base font-bold text-white shadow-card transition-transform hover:scale-[1.02] hover:bg-pizza-red-dark"
                 >
                   Order Online
