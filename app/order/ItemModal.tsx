@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  MEAL_UPSELLS,
   canonicalToppingGroup,
   groupLabel,
   money,
@@ -71,10 +72,12 @@ function Segmented<T extends string>({
 export default function ItemModal({
   product,
   isPizza,
+  mealUpsell = false,
   onClose,
 }: {
   product: Product;
   isPizza: boolean;
+  mealUpsell?: boolean;
   onClose: () => void;
 }) {
   const { addLine } = useCart();
@@ -82,6 +85,17 @@ export default function ItemModal({
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const [mealAdds, setMealAdds] = useState<Set<number>>(new Set());
+
+  const upsells = mealUpsell
+    ? MEAL_UPSELLS.filter((u) => u.id !== product.sizes[0].item.id)
+    : [];
+  const toggleMeal = (id: number) =>
+    setMealAdds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const hasSizes = product.sizes.length > 1;
   const size = product.sizes[sizeIndex];
@@ -187,10 +201,18 @@ export default function ItemModal({
 
   const unitPrice = item.price + selectedModifiers.reduce((s, m) => s + m.price, 0);
   const total = unitPrice * qty;
+  const mealAddTotal = upsells
+    .filter((u) => mealAdds.has(u.id))
+    .reduce((s, u) => s + u.price, 0);
+  const grandTotal = total + mealAddTotal;
+  const addCount = qty + mealAdds.size;
 
   const unmetGroups = simpleGroups.filter(
     (g) => g.min > 0 && (simple[g.id]?.length ?? 0) < g.min
   );
+
+  const newUid = (id: number) =>
+    `${id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   const handleAdd = () => {
     if (unmetGroups.length > 0) {
@@ -198,7 +220,7 @@ export default function ItemModal({
       return;
     }
     addLine({
-      uid: `${item.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      uid: newUid(item.id),
       itemId: item.id,
       name: hasSizes ? `${product.name} (${size.label})` : product.name,
       basePrice: item.price,
@@ -206,6 +228,11 @@ export default function ItemModal({
       modifiers: selectedModifiers,
       notes: notes.trim() || undefined,
     });
+    // "Make it a meal" add-ons become their own lines
+    for (const u of upsells) {
+      if (mealAdds.has(u.id))
+        addLine({ uid: newUid(u.id), itemId: u.id, name: u.name, basePrice: u.price, qty: 1, modifiers: [] });
+    }
     onClose();
   };
 
@@ -393,6 +420,41 @@ export default function ItemModal({
             );
           })}
 
+          {/* Make it a meal — upsell */}
+          {upsells.length > 0 && (
+            <fieldset className="mb-6">
+              <legend className="mb-2 flex items-center gap-1.5 font-display text-sm font-bold text-charcoal">
+                <span aria-hidden>🍽️</span> Make it a meal
+              </legend>
+              <div className="grid gap-1.5">
+                {upsells.map((u) => {
+                  const sel = mealAdds.has(u.id);
+                  return (
+                    <label
+                      key={u.id}
+                      className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-sm transition-colors ${
+                        sel ? "border-pizza-red bg-pizza-red/5" : "border-charcoal/12 hover:border-charcoal/25"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${sel ? "border-pizza-red bg-pizza-red text-white" : "border-charcoal/25"}`}>
+                          {sel && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className="font-medium text-charcoal">Add {u.name}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-semibold text-charcoal/60">+{money(u.price)}</span>
+                      <input type="checkbox" checked={sel} onChange={() => toggleMeal(u.id)} className="sr-only" />
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
           {/* Special instructions */}
           <div className="mt-2">
             <label className="mb-2 block font-display text-sm font-bold text-charcoal">Special instructions</label>
@@ -427,8 +489,8 @@ export default function ItemModal({
               onClick={handleAdd}
               className="flex flex-1 items-center justify-between rounded-full bg-pizza-red px-6 py-3.5 font-bold text-white shadow-card transition-colors hover:bg-pizza-red-dark"
             >
-              <span>Add to order</span>
-              <span>{money(total)}</span>
+              <span>{addCount > 1 ? `Add ${addCount} items` : "Add to order"}</span>
+              <span>{money(grandTotal)}</span>
             </button>
           </div>
         </div>

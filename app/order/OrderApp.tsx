@@ -7,22 +7,17 @@ import { useEffect, useRef, useState } from "react";
 import logo from "../../public/logo.png";
 import { LOCATIONS } from "../lib/data";
 import {
-  DEALS,
   FREE_DELIVERY_MIN,
-  MIX_MATCH,
+  MEAL_UPSELL_CATS,
   ORDER_CATEGORIES,
   PIZZA_CATEGORY_KEYS,
-  dealSavings,
   money,
   productHasOptions,
-  type Deal,
   type Product,
 } from "../lib/menu";
 import CrossSell from "./CrossSell";
 import { lineTotal, useCart } from "./CartContext";
 import ItemModal from "./ItemModal";
-
-const DEALS_KEY = "deals";
 
 export default function OrderApp() {
   const router = useRouter();
@@ -38,7 +33,7 @@ export default function OrderApp() {
     subtotal,
   } = useCart();
 
-  const [activeCat, setActiveCat] = useState(DEALS_KEY);
+  const [activeCat, setActiveCat] = useState(ORDER_CATEGORIES[0].key);
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -72,36 +67,6 @@ export default function OrderApp() {
     const it = product.sizes[0].item;
     addLine({ uid: uid(it.id), itemId: it.id, name: product.name, basePrice: it.price, qty: 1, modifiers: [] });
     flashToast(product.name);
-  };
-
-  const addDeal = (d: Deal) => {
-    addLine({
-      uid: uid(0),
-      itemId: 0,
-      name: d.name,
-      basePrice: d.price,
-      qty: 1,
-      modifiers: d.items.map((t) => ({
-        groupId: 0,
-        groupName: "Includes",
-        optionId: 0,
-        name: t,
-        price: 0,
-      })),
-    });
-    flashToast(d.name);
-  };
-
-  const addMix = (name: string) => {
-    addLine({
-      uid: uid(0),
-      itemId: 0,
-      name: `${name} · Mix & Match`,
-      basePrice: MIX_MATCH.price,
-      qty: 1,
-      modifiers: [],
-    });
-    flashToast(name);
   };
 
   const remaining = FREE_DELIVERY_MIN - subtotal;
@@ -159,12 +124,6 @@ export default function OrderApp() {
         {/* Category tabs */}
         <div className="border-t border-charcoal/10 bg-white">
           <div className="mx-auto flex max-w-6xl gap-1.5 overflow-x-auto px-4 py-2.5 sm:px-6">
-            <button
-              onClick={() => setActiveCat(DEALS_KEY)}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${activeCat === DEALS_KEY ? "bg-pizza-red text-white" : "bg-pizza-red/10 text-pizza-red hover:bg-pizza-red/20"}`}
-            >
-              🔥 Deals
-            </button>
             {ORDER_CATEGORIES.map((c) => (
               <button key={c.key} onClick={() => setActiveCat(c.key)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${activeCat === c.key ? "bg-charcoal text-white" : "bg-cream text-charcoal/65 hover:text-pizza-red"}`}>
@@ -177,41 +136,37 @@ export default function OrderApp() {
 
       {/* Content */}
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        {activeCat === DEALS_KEY ? (
-          <DealsView onAddDeal={addDeal} onAddMix={addMix} />
-        ) : (
-          category && (
-            <>
-              <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold text-charcoal">
-                <span aria-hidden>{category.emoji}</span>{category.name}
-              </h1>
-              {category.blurb && <p className="mt-1 text-sm text-charcoal/60">{category.blurb}</p>}
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {category.products.map((product) => (
-                  <button key={product.key} onClick={() => handleProductClick(product)}
-                    className="flex flex-col rounded-2xl border border-charcoal/10 bg-white p-4 text-left shadow-card transition-shadow hover:shadow-lift">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <h2 className="font-display text-base font-bold text-charcoal">{product.name}</h2>
-                        {product.badge && (
-                          <span className="rounded-full bg-pizza-green/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pizza-green-dark">{product.badge}</span>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-right">
-                        {product.sizes.length > 1 && <span className="block text-[10px] font-semibold uppercase tracking-wide text-charcoal/40">from</span>}
-                        <span className="font-display text-base font-extrabold text-pizza-green-dark">{money(product.fromPrice)}</span>
-                      </span>
+        {category && (
+          <>
+            <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold text-charcoal">
+              <span aria-hidden>{category.emoji}</span>{category.name}
+            </h1>
+            {category.blurb && <p className="mt-1 text-sm text-charcoal/60">{category.blurb}</p>}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {category.products.map((product) => (
+                <button key={product.key} onClick={() => handleProductClick(product)}
+                  className="flex flex-col rounded-2xl border border-charcoal/10 bg-white p-4 text-left shadow-card transition-shadow hover:shadow-lift">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-display text-base font-bold text-charcoal">{product.name}</h2>
+                      {product.badge && (
+                        <span className="rounded-full bg-pizza-green/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pizza-green-dark">{product.badge}</span>
+                      )}
                     </div>
-                    {product.desc && <p className="mt-1 line-clamp-2 text-sm text-charcoal/55">{product.desc}</p>}
-                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pizza-red">
-                      {productHasOptions(product) ? "Customize" : "Add"}
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    <span className="shrink-0 text-right">
+                      {product.sizes.length > 1 && <span className="block text-[10px] font-semibold uppercase tracking-wide text-charcoal/40">from</span>}
+                      <span className="font-display text-base font-extrabold text-pizza-green-dark">{money(product.fromPrice)}</span>
                     </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )
+                  </div>
+                  {product.desc && <p className="mt-1 line-clamp-2 text-sm text-charcoal/55">{product.desc}</p>}
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pizza-red">
+                    {productHasOptions(product) ? "Customize" : "Add"}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </main>
 
@@ -230,7 +185,12 @@ export default function OrderApp() {
       )}
 
       {modalProduct && (
-        <ItemModal product={modalProduct} isPizza={PIZZA_CATEGORY_KEYS.includes(activeCat)} onClose={() => setModalProduct(null)} />
+        <ItemModal
+          product={modalProduct}
+          isPizza={PIZZA_CATEGORY_KEYS.includes(activeCat)}
+          mealUpsell={MEAL_UPSELL_CATS.includes(activeCat)}
+          onClose={() => setModalProduct(null)}
+        />
       )}
 
       {/* Cart drawer */}
@@ -317,81 +277,5 @@ export default function OrderApp() {
         </div>
       )}
     </div>
-  );
-}
-
-function DealsView({
-  onAddDeal,
-  onAddMix,
-}: {
-  onAddDeal: (d: Deal) => void;
-  onAddMix: (name: string) => void;
-}) {
-  return (
-    <>
-      <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold text-charcoal">
-        🔥 Deals &amp; Combos
-      </h1>
-      <p className="mt-1 text-sm text-charcoal/60">Bundle up and save — the easiest way to feed everyone for less.</p>
-
-      {/* Mix & Match */}
-      <div className="mt-5 overflow-hidden rounded-3xl border border-pizza-red/20 bg-white shadow-card">
-        <div className="bg-pizza-red px-5 py-4 text-white">
-          <p className="font-display text-lg font-extrabold">Mix &amp; Match — {money(MIX_MATCH.price)} each</p>
-          <p className="text-sm text-white/85">Pick any 2 or more. Mix pizzas, breadsticks, wings, subs &amp; calzones.</p>
-        </div>
-        <div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MIX_MATCH.items.map((it) => (
-            <button
-              key={it.name}
-              onClick={() => onAddMix(it.name)}
-              className="flex items-center justify-between gap-2 rounded-xl border border-charcoal/12 bg-cream px-3.5 py-3 text-left transition-colors hover:border-pizza-red"
-            >
-              <span>
-                <span className="block text-sm font-bold text-charcoal">{it.name}</span>
-                <span className="text-xs text-charcoal/45 line-through">reg {money(it.reg)}</span>
-              </span>
-              <span className="shrink-0 rounded-full bg-pizza-red px-3 py-1.5 text-xs font-bold text-white">
-                Add {money(MIX_MATCH.price)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Combos */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {DEALS.map((d) => (
-          <div key={d.key} className="flex flex-col rounded-3xl border border-charcoal/10 bg-white p-5 shadow-card">
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-3xl" aria-hidden>{d.emoji}</div>
-              {d.badge && (
-                <span className="rounded-full bg-pizza-green/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-pizza-green-dark">{d.badge}</span>
-              )}
-            </div>
-            <h3 className="mt-2 font-display text-lg font-extrabold text-charcoal">{d.name}</h3>
-            <p className="mt-1 text-sm text-charcoal/60">{d.desc}</p>
-            <ul className="mt-3 space-y-1">
-              {d.items.map((t) => (
-                <li key={t} className="flex items-center gap-1.5 text-xs text-charcoal/65">
-                  <span className="text-pizza-green-dark">✓</span> {t}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="font-display text-2xl font-extrabold text-charcoal">{money(d.price)}</span>
-              <span className="text-sm text-charcoal/40 line-through">{money(d.regular)}</span>
-              <span className="ml-auto rounded-full bg-pizza-green/12 px-2 py-0.5 text-xs font-bold text-pizza-green-dark">Save {money(dealSavings(d))}</span>
-            </div>
-            <button
-              onClick={() => onAddDeal(d)}
-              className="mt-4 rounded-full bg-pizza-red px-5 py-3 text-center font-bold text-white shadow-card transition-colors hover:bg-pizza-red-dark"
-            >
-              Add to order
-            </button>
-          </div>
-        ))}
-      </div>
-    </>
   );
 }

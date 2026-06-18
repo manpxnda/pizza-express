@@ -30,12 +30,18 @@ export default function CheckoutPage() {
   });
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [showReveal, setShowReveal] = useState(false);
+  const [tipMode, setTipMode] = useState<"0" | "15" | "18" | "20" | "custom">("15");
+  const [customTip, setCustomTip] = useState("");
 
   const isDelivery = state.orderType === "delivery";
   const freeDelivery = isDelivery && subtotal >= FREE_DELIVERY_MIN;
   const tax = subtotal * TAX_RATE;
   const deliveryFee = isDelivery && !freeDelivery ? DELIVERY_FEE : 0;
-  const total = subtotal + tax + deliveryFee;
+  const tipAmount =
+    tipMode === "custom"
+      ? Math.max(0, parseFloat(customTip) || 0)
+      : subtotal * (parseInt(tipMode, 10) / 100);
+  const total = subtotal + tax + deliveryFee + tipAmount;
 
   const set = (k: keyof typeof form, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -223,6 +229,55 @@ export default function CheckoutPage() {
               ))}
             </ul>
 
+            {/* Tip prompt */}
+            <div className="mt-4 border-t border-charcoal/10 pt-4">
+              <p className="font-display text-sm font-bold text-charcoal">
+                {isDelivery ? "Tip your driver" : "Tip the crew"}
+              </p>
+              <p className="mb-2 text-xs text-charcoal/50">100% goes to the team. Thank you! 🙏</p>
+              <div className="grid grid-cols-5 gap-1.5">
+                {(
+                  [
+                    ["0", "No tip"],
+                    ["15", "15%"],
+                    ["18", "18%"],
+                    ["20", "20%"],
+                    ["custom", "Custom"],
+                  ] as const
+                ).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setTipMode(mode)}
+                    className={`rounded-lg px-1 py-2 text-center text-xs font-bold transition-colors ${
+                      tipMode === mode
+                        ? "bg-pizza-red text-white"
+                        : "bg-cream-deep text-charcoal/60 hover:text-pizza-red"
+                    }`}
+                  >
+                    {label}
+                    {mode !== "0" && mode !== "custom" && (
+                      <span className="block text-[10px] font-medium opacity-80">
+                        {money((subtotal * parseInt(mode, 10)) / 100)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {tipMode === "custom" && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-charcoal/60">$</span>
+                  <input
+                    value={customTip}
+                    onChange={(e) => setCustomTip(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="w-24 rounded-lg border border-charcoal/15 px-2.5 py-1.5 text-sm outline-none focus:border-pizza-red"
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="mt-3 space-y-1.5 border-t border-charcoal/10 pt-3 text-sm">
               <div className="flex justify-between text-charcoal/65">
                 <span>Subtotal</span>
@@ -248,6 +303,12 @@ export default function CheckoutPage() {
                 <p className="text-xs text-pizza-green-dark">
                   Add {money(FREE_DELIVERY_MIN - subtotal)} more for free delivery.
                 </p>
+              )}
+              {tipAmount > 0 && (
+                <div className="flex justify-between text-charcoal/65">
+                  <span>Tip</span>
+                  <span>{money(tipAmount)}</span>
+                </div>
               )}
               <div className="flex justify-between border-t border-charcoal/10 pt-2 font-display text-lg font-extrabold text-charcoal">
                 <span>Total</span>
