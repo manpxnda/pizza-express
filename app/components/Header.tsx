@@ -5,10 +5,10 @@ import { useState } from "react";
 import logo from "../../public/logo.png";
 
 const NAV = [
+  { href: "#deals", label: "Deals" },
   { href: "#order", label: "Order" },
   { href: "#menu", label: "Menu" },
   { href: "#locations", label: "Locations" },
-  { href: "#about", label: "About" },
 ];
 
 export default function Header() {

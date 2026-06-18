@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import logo from "../../../public/logo.png";
 import { LOCATIONS } from "../../lib/data";
-import { money } from "../../lib/menu";
+import { FREE_DELIVERY_MIN, money } from "../../lib/menu";
 import { lineTotal, useCart } from "../CartContext";
+import CrossSell from "../CrossSell";
 
 const TAX_RATE = 0.07; // estimated; finalized by the store at checkout
 const DELIVERY_FEE = 3.0; // placeholder until delivery pricing is wired up
@@ -31,8 +32,9 @@ export default function CheckoutPage() {
   const [showReveal, setShowReveal] = useState(false);
 
   const isDelivery = state.orderType === "delivery";
+  const freeDelivery = isDelivery && subtotal >= FREE_DELIVERY_MIN;
   const tax = subtotal * TAX_RATE;
-  const deliveryFee = isDelivery ? DELIVERY_FEE : 0;
+  const deliveryFee = isDelivery && !freeDelivery ? DELIVERY_FEE : 0;
   const total = subtotal + tax + deliveryFee;
 
   const set = (k: keyof typeof form, v: string) =>
@@ -233,13 +235,28 @@ export default function CheckoutPage() {
               {isDelivery && (
                 <div className="flex justify-between text-charcoal/65">
                   <span>Delivery fee</span>
-                  <span>{money(deliveryFee)}</span>
+                  {freeDelivery ? (
+                    <span className="font-semibold text-pizza-green-dark">
+                      <span className="mr-1 text-charcoal/40 line-through">{money(DELIVERY_FEE)}</span>FREE
+                    </span>
+                  ) : (
+                    <span>{money(deliveryFee)}</span>
+                  )}
                 </div>
+              )}
+              {isDelivery && !freeDelivery && (
+                <p className="text-xs text-pizza-green-dark">
+                  Add {money(FREE_DELIVERY_MIN - subtotal)} more for free delivery.
+                </p>
               )}
               <div className="flex justify-between border-t border-charcoal/10 pt-2 font-display text-lg font-extrabold text-charcoal">
                 <span>Total</span>
                 <span>{money(total)}</span>
               </div>
+            </div>
+
+            <div className="mt-5 border-t border-charcoal/10 pt-4">
+              <CrossSell title="Add a little extra?" />
             </div>
 
             <button

@@ -174,6 +174,111 @@ export function suggestedFrom(p: Product): number | null {
   return s && Math.abs(s - p.fromPrice) > 0.001 ? s : null;
 }
 
+/* ------------------------------------------------------------------ *
+ * Deals & combos — Domino's-inspired AOV levers.
+ * ------------------------------------------------------------------ */
+
+export type Deal = {
+  key: string;
+  emoji: string;
+  name: string;
+  desc: string;
+  items: string[]; // what's included (display)
+  price: number;
+  regular: number; // sum of components, for the savings callout
+  badge?: string;
+};
+
+export const DEALS: Deal[] = [
+  {
+    key: "family",
+    emoji: "👨‍👩‍👧",
+    name: "Family Deal",
+    desc: "Large 1-topping pizza, large breadsticks & a 2-liter.",
+    items: ["Large 1-Topping Pizza", "Large Breadsticks", "2-Liter"],
+    price: 23.99,
+    regular: 26.8,
+    badge: "Best value",
+  },
+  {
+    key: "gameday",
+    emoji: "🏈",
+    name: "Game Day Bundle",
+    desc: "Two large 1-topping pizzas, 10 wings & a 2-liter.",
+    items: ["2× Large 1-Topping Pizza", "10 Wings", "2-Liter"],
+    price: 39.99,
+    regular: 45.15,
+    badge: "Feeds 4–6",
+  },
+  {
+    key: "date",
+    emoji: "🍕",
+    name: "Date Night",
+    desc: "Medium 2-topping pizza + small breadsticks.",
+    items: ["Medium 2-Topping Pizza", "Small Breadsticks"],
+    price: 18.99,
+    regular: 19.75,
+  },
+  {
+    key: "lunch",
+    emoji: "🥤",
+    name: "Lunch Combo",
+    desc: "Small 1-topping pizza + a 20 oz drink.",
+    items: ["Small 1-Topping Pizza", "20 oz Drink"],
+    price: 11.99,
+    regular: 13.1,
+    badge: "Weekday fave",
+  },
+  {
+    key: "party",
+    emoji: "🎉",
+    name: "Party Pack",
+    desc: "Full Belly Buster, 20 wings & two 2-liters.",
+    items: ["Belly Buster (40 pc)", "20 Wings", "2× 2-Liter"],
+    price: 54.99,
+    regular: 64.85,
+    badge: "Feeds a crowd",
+  },
+];
+
+export const dealSavings = (d: Deal): number =>
+  Math.max(0, Math.round((d.regular - d.price) * 100) / 100);
+
+/** Mix & Match — pick any 2+ for one flat price each (Domino's "Best Deal Ever"). */
+export type MixMatch = { price: number; items: { name: string; reg: number }[] };
+export const MIX_MATCH: MixMatch = {
+  price: 7.99,
+  items: [
+    { name: "Medium 1-Topping Pizza", reg: 12.6 },
+    { name: "Large Breadsticks", reg: 8.75 },
+    { name: "10 Boneless Wings", reg: 10.5 },
+    { name: "Any Whole Sub", reg: 11.5 },
+    { name: "Chicken Calzone", reg: 8.95 },
+    { name: "Steak Calzone", reg: 8.95 },
+  ],
+};
+
+/** Order $25+ for free delivery (a nudge to grow the basket). */
+export const FREE_DELIVERY_MIN = 25;
+
+/** One-tap cross-sell add-ons shown in the cart ("Complete your order"). */
+function findByFrag(frag: string): MenuItem | undefined {
+  for (const c of CATEGORIES)
+    for (const i of c.items)
+      if (i.name.toLowerCase().includes(frag.toLowerCase())) return i;
+  return undefined;
+}
+export const CROSS_SELL: MenuItem[] = [
+  "2 Liter Pepsi",
+  "Cinnamon Sticks",
+  "Mozzarella Sticks",
+  "Choc Chip Cookie",
+  "Jalapeno Poppers",
+  "20 oz Pepsi",
+]
+  .map((f) => findByFrag(f))
+  .filter((x): x is MenuItem => !!x);
+
 export function productHasOptions(p: Product): boolean {
   return p.sizes.length > 1 || p.sizes.some((s) => s.item.modifierGroups.length > 0);
 }
